@@ -2,6 +2,14 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## 1.3.0 syncs make-bot-ui from Cursor pstack 0.14.5
+
+Cursor pstack 0.14.4 added a skill for building a page whose buttons wake a Grok Bot over a webhook, including the sender-key handoff and Tailscale. 0.14.5 moved that skill from `skills/grokbot/make-bot-ui/` to `skills/make-bot-ui/` so the plugin loader registers it. `git log` against the previous pin and GitHub compare confirm those two commits are the entire pstack delta after Open Pstack's 0.14.3 pin.
+
+The port keeps the Grok Bot instructions (`update_state` webhook routines and `SendToUser` secret-request) as written. It does not invent Codex-only tool names for those APIs, and it does not drop the skill because it is Grok-Bot-oriented. Frontmatter `name` is `make-bot-ui` so it matches the directory and the rest of this tree; upstream uses the display name `Make Bot UI`. There is no Platform note: the body names Grok Bot APIs, not Claude primitives.
+
+Open Pstack 1.3.0 tracks Cursor pstack 0.14.5 at `6fecddba65801f9b9c08b8b328d998ee5b09d290`.
+
 ## 1.2.0 adds verified multi-PR plans, earlier runtime diagnostics, and shared review-bot triage
 
 Plans with several stages now use one checklist instead of an overview and separate files for each stage. It has one ordered section for every pull request and keeps all ten ways of testing the real product, unit tests, live and performance proof, checks for how changes work together, merge rules, and supporting details in one place. A Node-based checker with no extra dependencies rejects missing or out-of-order sections, fake screenshots, empty definitions of success, incomplete performance proof, incorrectly written review checks, unsupported punctuation, and incorrect command use. Claude Code and Codex use the same installed skill and checker through their existing parent-controlled setup. If a provider fails, it is identified by name and treated as a dropout. No backup provider or hidden time limit was added.
