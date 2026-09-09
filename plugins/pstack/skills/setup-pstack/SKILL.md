@@ -87,21 +87,20 @@ After the operator confirms, write the in-memory render from step 6. Never paste
 Provider-qualified per-role choices. Read the installed pstack provider-dispatch reference before dispatching a configured role. Every documented role remains present. `inherit-parent` and `auto` use the parent model natively and still count as one panel lane.
 
 feature, refactoring: grok:grok-4.6@xhigh
-bug-fix: codex:gpt-5.6-sol@max
-perf-issue: codex:gpt-5.6-sol@max
-hillclimb: codex:gpt-5.6-sol@max
-judgment and prose: claude:claude-fable-5@max
-hardest tasks: claude:claude-fable-5@max
+bug-fix: claude:claude-fable-5-1@max
+perf-issue: claude:claude-fable-5-1@max
+hillclimb: claude:claude-fable-5-1@max
+judgment and prose: claude:claude-fable-5-1@max
+hardest tasks: claude:claude-fable-5-1@max
 how explorer: grok:grok-4.6@xhigh
-how explainer: claude:claude-fable-5@max
-how critics: claude:claude-fable-5@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
+how explainer: claude:claude-fable-5-1@max
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: claude:claude-fable-5@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
-arena cross-judge pool: claude:claude-fable-5@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
+arena runners: claude:claude-fable-5-1@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
+arena cross-judge pool: claude:claude-fable-5-1@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
 swarm workers: grok:grok-4.6@xhigh
-architect runners: claude:claude-fable-5@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
-interrogate reviewers: claude:claude-fable-5@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
+architect runners: claude:claude-fable-5-1@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
+interrogate reviewers: claude:claude-fable-5-1@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:claude-opus-5@xhigh
 ```
 
 ### 8. Wire it in

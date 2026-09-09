@@ -80,7 +80,7 @@ In Codex, ask:
 Use pstack:setup-pstack to configure pstack.
 ```
 
-Setup checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable 5, GPT-5.6 Sol, Grok 4.6, and Opus 5.
+Setup checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable 5.1, GPT-5.6 Sol, Grok 4.6, and Opus 5.
 
 ### 2. Use poteto-mode
 
@@ -151,7 +151,7 @@ This repository also keeps:
 
 ## Staying close to Lauren's pstack
 
-Open Pstack 1.3.0 tracks pstack 0.14.5 at Cursor commit [`6fecddba65801f9b9c08b8b328d998ee5b09d290`](https://github.com/cursor/plugins/commit/6fecddba65801f9b9c08b8b328d998ee5b09d290).
+Open Pstack 1.4.0 tracks pstack 0.15.0 at Cursor commit [`71ed0d1076fec562c1b74ee353121a8d00f75382`](https://github.com/cursor/plugins/commit/71ed0d1076fec562c1b74ee353121a8d00f75382).
 
 The two projects have separate version numbers. The pstack version identifies Lauren's upstream content. The Open Pstack version identifies the Claude Code and Codex package built from it.
 

@@ -19,6 +19,8 @@ This plugin is a port of upstream MIT-licensed work. All upstream copyright noti
 | `plugins/pstack/skills/{swarm,no-comments,technical-writing,bro}/`, `plugins/pstack/agents/comment-sicko.md`, `plugins/pstack/skills/poteto-mode/playbooks/{babysit,shipping,orchestrate,autopilot-full,autopilot-stack,worktree-cleanup,multi-phase-plan}.md`, `plugins/pstack/skills/poteto-mode/references/bugbot-triage.md`, `plugins/pstack/skills/poteto-mode/scripts/`, `plugins/pstack/skills/architect/references/design-red-flags.md`, `plugins/pstack/skills/create-verification-skill/references/feature-map-example/` (v0.14.2 additions, v0.14.3 checklist) | [cursor/plugins/pstack @ bdf7aa3](https://github.com/cursor/plugins/tree/bdf7aa355337897f167153e05069aca505dae17c/pstack) | (c) 2026 Lauren Tan | MIT | [LICENSE](LICENSE) |
 | `plugins/pstack/skills/make-bot-ui/` (v0.14.5) | [cursor/plugins/pstack @ 6fecddb](https://github.com/cursor/plugins/tree/6fecddba65801f9b9c08b8b328d998ee5b09d290/pstack) | (c) 2026 Lauren Tan | MIT | [LICENSE](LICENSE) |
 
+| Shared pstack skills updated for v0.15.0, including `principle-attack-the-premise`, `principle-test-behavior-not-implementation`, and `plugins/pstack/assets/logo.png` | [cursor/plugins/pstack @ 71ed0d1](https://github.com/cursor/plugins/tree/71ed0d1076fec562c1b74ee353121a8d00f75382/pstack) | (c) 2026 Lauren Tan | MIT | [LICENSE](LICENSE) |
+
 ## What changed in the port
 
 The port is editorial, not mechanical. See [CHANGES.md](CHANGES.md) for the full per-skill audit of substitutions applied.

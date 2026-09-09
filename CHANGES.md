@@ -2,6 +2,14 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## 1.4.0 syncs Cursor pstack 0.15.0
+
+Tracks Cursor commit `71ed0d1076fec562c1b74ee353121a8d00f75382`, including all seven pstack commits after the 0.14.5 sync. How uses one explainer for simple questions and explorers followed by one explainer for complex questions. Its critic panel and two critic references are removed. Why uses one investigator for simple questions and parallel investigators followed by synthesis for complex questions. The two new principle leaves cover questioning a repeatedly failing premise and testing observable behavior. The shared skills include upstream's shorter prose and forge-neutral PR playbooks.
+
+The port preserves one Claude Code/Codex skill tree, provider-qualified descriptors, parent-owned dispatch, MCP-dependent native roles, the verified plan checker, and explicit dropout behavior. Upstream Fable 5.1 defaults map to `claude:claude-fable-5-1@max`, including bug-fix, perf-issue, and hillclimb. Claude-native Fable agents use the same model at each supported effort. Existing user model sheets are not rewritten by installation. Setup requires an explicit replacement for any old model descriptor or retired role before it writes.
+
+The existing native skill convention remains: skills stay model-readable, and principle leaves request `user-invocable: false`. Cursor's added `disable-model-invocation` flags are omitted because the shared workflows invoke these native skills directly. The upstream logo is packaged unchanged. README-UPSTREAM.md preserves the 0.15.0 README verbatim.
+
 ## 1.3.0 syncs make-bot-ui from Cursor pstack 0.14.5
 
 Cursor pstack 0.14.4 added a skill for building a page whose buttons wake a Grok Bot over a webhook, including the sender-key handoff and Tailscale. 0.14.5 moved that skill from `skills/grokbot/make-bot-ui/` to `skills/make-bot-ui/` so the plugin loader registers it. `git log` against the previous pin and GitHub compare confirm those two commits are the entire pstack delta after Open Pstack's 0.14.3 pin.
