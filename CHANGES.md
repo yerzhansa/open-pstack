@@ -2,6 +2,30 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## 1.4.2 syncs to Cursor pstack 0.15.5
+
+Open Pstack 1.4.2 tracks Cursor pstack 0.15.5 at `12d587dfb20741cafc376c42c696c5f6e2a64487`. It ports the seven upstream pstack commits after 0.15.1 in order, one commit each: `f5bdd68`, `889ec4b`, `5bf2b15`, `70b2dc8`, `b42effe`, `b0b9c7a`, and `12d587d`. `README-UPSTREAM.md` carries upstream's 0.15.5 README verbatim.
+
+**Model defaults.** Opus max now covers judgment, prose, explanation, and hardest tasks. The default panel for arena, architect, interrogate, and the arena cross-judge pool is `claude:opus@max`, `codex:gpt-5.6-sol@max`, and `grok:grok-4.7@xhigh`. Feature, refactoring, How exploration, and swarm workers use `grok:grok-4.7@xhigh`, and the Grok route pins the `grok-4.7` CLI model. The rolling `opus` alias resolves to the latest Opus revision, so for Claude only the Opus default effort changes, from `xhigh` to `max`. The model matrix gains a Default panel column and lists Opus, Sol, Grok, then Fable. The default panel is the rows marked `yes`, in row order. Fable stays a selectable family with its native agents, but no first-run role uses it. The model matrix test and the static panel check read the new column.
+
+**Setup.** Setup asks for a reasoning budget before the per-family effort questions, with upstream's four labels. `unlimited` proposes each family's matrix default. `large`, `medium`, and `small` propose `xhigh`, `high`, or `medium` for every family. The budget only proposes efforts. The sheet gets no budget line, because effort lives only in role descriptors. Setup now asks efforts for, and probes, only the families that the role map uses. A role change that brings in an unused family, such as Fable, asks its effort and probes it before confirmation. A sheet written before 1.4.2 keeps its old default models. Its `grok:grok-4.6` descriptors no longer match the matrix, so setup reports them as inconsistent state. The README tells operators to delete the old default role lines, or the sheet, and rerun setup, which fills each missing role with the current default.
+
+**Autopilot and plans.** Owners report a code-ready head once the shipped code is final. The root swarm-verifies a round at that head and at every later push that changes the patch. Each round has two or more focused audit lanes, and every proven finding goes back to the owner in one fix-forward. Owners rebase before the code-ready report, keep that merge base in fix rounds, and rebase again only at merge prep or when trunk forces it. CI must pass on the merge-prep head. Shipping keeps a lane result when two patches differ only in tests, docs, or lint config and the rebuilt output differs only by noise. A countersign that the operator's grant covers serves as the approval. Autopilot owners babysit their own PRs, and an Autopilot-full owner publishes each rebase only to its own branch. The plan tick posts to chat only when something new happened and always logs a decision row. Autopilot and the poteto-mode index use operator-neutral pronouns. Swarm briefs name the exact SHAs and measurement method. A result without them is rerun once, then recorded as a gap.
+
+**Other skill changes.** Under a full-autonomy grant, poteto-mode decides the calls the grant covers. For a call only the operator can make, it applies a default and reports the one word that reverses it. The show-me-your-work audit is append-only and checks only this run's rows, which `start` rows mark. `log.sh` appends its header with `>>`. Upstream's instruction cuts land in blast-radius, figure-it-out, pause-safely, tdd, technical-writing, unslop, show-me-your-work, interrogate's references, reflect's reviewer prompts, four principle leaves, and the bug-fix, feature, and refactoring playbooks. Every routed skill reads its named line in the current harness's model sheet and falls back to its default when the sheet or line is missing.
+
+**Kept adaptations.** These upstream changes conflict with documented Open Pstack behavior, so the port keeps its own rule:
+
+- `889ec4b` moves `bug-fix`, `perf-issue`, and `hillclimb` to Grok. They stay on `codex:gpt-5.6-sol@max`, as `UPSTREAM.md` documents for `23a56e2`.
+- Why and Reflect roles stay on `inherit-parent` because their lanes need the parent's MCP tools.
+- Upstream treats a lane that passes its expected runtime as stuck. Open Pstack has no implicit timeout, so a lane stands down only on affirmative failure evidence. `children.tsv` records each subagent's ID, retained handle, and state instead of an expected runtime.
+- Upstream runs a rejected model entry on its family default or the closest valid slug. Open Pstack records a named dropout and never substitutes another model.
+- Upstream setup drops role lines it no longer knows, such as `how critics`. Open Pstack keeps the 1.4.0 rule. An unknown role row is inconsistent state, and the operator removes it before setup probes or writes.
+- `control-cli` and `control-ui` stay mapped to the `run` and `verify` driver skills. Upstream's "AGENTS.md files and rules" becomes the repository's AGENTS.md and CLAUDE.md files.
+- The plan checker already requires the configured `swarm workers` role in the live-lane sentence, so upstream's lane-model edits to `check-plan.mjs` change nothing. Its test also forbids the Grok 4.7 Cursor slug in the skeleton.
+
+Existing exclusions remain: `make-bot-ui`, the Cursor manifest, `docs/guide/`, and the invocation-blocking flags on How, Why, Unslop, and TypeScript best practices.
+
 ## 1.4.1 syncs to Cursor pstack 0.15.1
 
 Open Pstack 1.4.1 tracks Cursor pstack 0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. Poteto-mode now requires each claim to include its evidence or a measured, inferred, or guess label in the same sentence. Agents also run any check they can run themselves instead of handing that check to the user. No playbook, model, runtime, or dependency changed.
