@@ -9,7 +9,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { invocationCommand, preflightCommand, type CommandSpec } from "./commands.ts";
+import {
+  cursorModel,
+  invocationCommand,
+  preflightCommand,
+  type CommandSpec,
+} from "./commands.ts";
 import { versionedClaudeAlias } from "./model-aliases.ts";
 import { parseProviderOutput, reportedModelMatches } from "./parse-output.ts";
 import type {
@@ -224,10 +229,11 @@ async function runProcess(
   deadlineAt: number | null,
   cancellation: RunCancellation
 ): Promise<ProcessResult> {
-  const child = Bun.spawn([executable, ...spec.args], {
+  const promptArgument = spec.prompt === "argument" ? [prompt] : [];
+  const child = Bun.spawn([executable, ...spec.args, ...promptArgument], {
     cwd,
     env,
-    stdin: spec.stdin === "prompt" ? "pipe" : "ignore",
+    stdin: spec.prompt === "stdin" ? "pipe" : "ignore",
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -257,7 +263,7 @@ async function runProcess(
       arm();
     });
   try {
-    if (spec.stdin === "prompt") {
+    if (spec.prompt === "stdin") {
       const stdin = child.stdin;
       if (stdin === undefined) throw new Error("child stdin pipe was not created");
       stdin.write(prompt);
@@ -350,6 +356,10 @@ async function waitForGrokPreflightRetry(
   }
 }
 
+function listsCursorModel(text: string, model: string): boolean {
+  return text.split("\n").some((line) => line.startsWith(`${model} - `));
+}
+
 function preflightPassed(provider: Provider, model: string, result: ProcessResult): boolean {
   if (result.exitCode !== 0 || result.timedOut) return false;
   const combined = `${result.stdout}\n${result.stderr}`;
@@ -370,11 +380,13 @@ function preflightPassed(provider: Provider, model: string, result: ProcessResul
       return /logged in/i.test(combined);
     case "grok":
       return /logged in/i.test(combined) && combined.includes(model);
+    case "cursor":
+      return listsCursorModel(combined, model);
   }
 }
 
 function successfulPreflightEvidence(provider: Provider, model: string): string {
-  return provider === "grok"
+  return provider === "grok" || provider === "cursor"
     ? `authenticated; model ${model} available`
     : "authenticated";
 }
@@ -396,7 +408,10 @@ function preflightFailureStatus(
 ): ReceiptStatus {
   const status = unavailableStatus(value);
   if (status !== "child-failed") return status;
-  return provider === "grok" && !value.includes(model)
+  const listed = provider === "cursor"
+    ? listsCursorModel(value, model)
+    : value.includes(model);
+  return (provider === "grok" || provider === "cursor") && !listed
     ? "unavailable-model"
     : "unauthenticated";
 }
@@ -450,7 +465,7 @@ function modelProof(
       modelEvidence: "provider-report",
     };
   }
-  if (provider === "codex" && reported === null) {
+  if ((provider === "codex" || provider === "cursor") && reported === null) {
     return {
       reportedModel: null,
       modelVerified: false,
@@ -534,6 +549,9 @@ async function executeLane(
 ): Promise<RunResult> {
   const startedAt = new Date(started).toISOString();
   const prompt = readFileSync(options.promptPath, "utf8");
+  const preflightModel = options.provider === "cursor"
+    ? cursorModel(options.model, options.effort)
+    : options.model;
   const env = childEnvironment(options.provider);
   const executable = Bun.which(invocation.command, {
     PATH: env.PATH,
@@ -628,9 +646,9 @@ async function executeLane(
     cancellation
   );
   let rawPreflightEvidence = evidence(`${preflightResult.stdout}\n${preflightResult.stderr}`);
-  let passed = preflightPassed(options.provider, options.model, preflightResult);
+  let passed = preflightPassed(options.provider, preflightModel, preflightResult);
   let preflightEvidence = passed
-    ? successfulPreflightEvidence(options.provider, options.model)
+    ? successfulPreflightEvidence(options.provider, preflightModel)
     : rawPreflightEvidence;
 
   if (
@@ -638,7 +656,7 @@ async function executeLane(
     !passed &&
     preflightResult.cancelledBy === null &&
     !preflightResult.timedOut &&
-    preflightFailureStatus(options.provider, options.model, rawPreflightEvidence) ===
+    preflightFailureStatus(options.provider, preflightModel, rawPreflightEvidence) ===
       "unauthenticated"
   ) {
     preflightState = {
@@ -672,11 +690,11 @@ async function executeLane(
       cancellation
     );
     rawPreflightEvidence = evidence(`${preflightResult.stdout}\n${preflightResult.stderr}`);
-    passed = preflightPassed(options.provider, options.model, preflightResult);
+    passed = preflightPassed(options.provider, preflightModel, preflightResult);
     preflightEvidence = retriedPreflightEvidence(
       firstPreflightEvidence,
       passed
-        ? successfulPreflightEvidence(options.provider, options.model)
+        ? successfulPreflightEvidence(options.provider, preflightModel)
         : rawPreflightEvidence,
       passed
     );
@@ -699,7 +717,7 @@ async function executeLane(
     const completed = Date.now();
     const preflightFailure = preflightFailureStatus(
       options.provider,
-      options.model,
+      preflightModel,
       rawPreflightEvidence
     );
     const status: ReceiptStatus = preflightResult.cancelledBy !== null

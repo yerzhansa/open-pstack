@@ -114,6 +114,37 @@ function parseGrok(stdout: string, requestedModel: string): ParsedOutput {
   };
 }
 
+function parseCursor(stdout: string): ParsedOutput {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(stdout);
+  } catch {
+    throw new Error("cursor-agent did not emit valid JSON");
+  }
+  const value = object(raw);
+  if (value === null) throw new Error("cursor-agent emitted a non-object result");
+  if (value.is_error === true || value.subtype !== "success") {
+    throw new Error("cursor-agent reported an error result");
+  }
+  const text = nullableString(value.result);
+  if (text === null) throw new Error("cursor-agent result did not contain final text");
+  const usage = object(value.usage);
+  return {
+    text,
+    reportedModel: null,
+    sessionId: nullableString(value.session_id),
+    usage: usage === null
+      ? null
+      : normalizedUsage({
+          input_tokens: usage.inputTokens,
+          output_tokens: usage.outputTokens,
+          cache_read_input_tokens: usage.cacheReadTokens,
+          cache_write_input_tokens: usage.cacheWriteTokens,
+        }),
+    costUsd: null,
+  };
+}
+
 function parseCodex(stdout: string): ParsedOutput {
   let text: string | null = null;
   let usage: NormalizedUsage | null = null;
@@ -170,6 +201,8 @@ export function parseProviderOutput(
       return parseCodex(stdout);
     case "grok":
       return parseGrok(stdout, requestedModel);
+    case "cursor":
+      return parseCursor(stdout);
   }
 }
 

@@ -27,7 +27,8 @@ const name = process.argv[1].split("/").at(-1);
 const isPreflight =
   (name === "claude" && args[0] === "auth") ||
   (name === "codex" && args[0] === "login") ||
-  (name === "grok" && args[0] === "models");
+  (name === "grok" && args[0] === "models") ||
+  (name === "cursor-agent" && args[0] === "models");
 const stage = isPreflight ? "preflight" : "model";
 const startedPath = isPreflight
   ? process.env.FAKE_PREFLIGHT_STARTED_PATH
@@ -63,6 +64,10 @@ if (name === "claude" && args[0] === "auth") {
 }
 if (name === "codex" && args[0] === "login") {
   console.log("Logged in using ChatGPT");
+  process.exit(0);
+}
+if (name === "cursor-agent" && args[0] === "models") {
+  console.log(process.env.FAKE_CURSOR_MODELS ?? "grok-4.7-xhigh - Grok 4.7  Extra High\\ngrok-4.7-xhigh-fast - Grok 4.7  Extra High Fast");
   process.exit(0);
 }
 if (name === "grok" && args[0] === "models") {
@@ -120,6 +125,8 @@ if (name === "claude") {
   console.log(JSON.stringify({type:"thread.started",thread_id:"o1"}));
   console.log(JSON.stringify({type:"item.completed",item:{type:"agent_message",text:"CODEX_OK"}}));
   console.log(JSON.stringify({type:"turn.completed",usage:{input_tokens:20,cached_input_tokens:5,output_tokens:3,reasoning_output_tokens:1}}));
+} else if (name === "cursor-agent") {
+  console.log(JSON.stringify({type:"result",subtype:"success",is_error:false,result:"CURSOR_OK " + args.at(-1),session_id:"u1",usage:{inputTokens:40,outputTokens:5,cacheReadTokens:7,cacheWriteTokens:0}}));
 } else {
   console.log(JSON.stringify({type:"assistant",message:{content:[{type:"text",text:"progress"}]}}));
   console.log(JSON.stringify({type:"result",subtype:"success",is_error:false,result:"GROK_OK",session_id:"g1",usage:{input_tokens:30,output_tokens:4,total_tokens:34},total_cost_usd:0.02,modelUsage:{[model + "-build"]:{}}}));
@@ -142,12 +149,14 @@ function options(provider: Provider, suffix: string = provider): RunnerOptions {
       ? "fable"
       : provider === "codex"
         ? "gpt-5.6-sol"
-        : "grok-4.6";
+        : provider === "cursor"
+          ? "grok-4.7"
+          : "grok-4.6";
   return {
     parent,
     provider,
     model,
-    effort: provider === "grok" ? "xhigh" : "max",
+    effort: provider === "grok" || provider === "cursor" ? "xhigh" : "max",
     mode: "read-only",
     promptPath: join(scratch, "prompt.md"),
     cwd: scratch,
@@ -221,7 +230,7 @@ beforeEach(() => {
   bin = join(scratch, "bin");
   mkdirSync(bin);
   writeFileSync(join(scratch, "prompt.md"), "Return the marker.");
-  for (const name of ["claude", "codex", "grok"]) makeExecutable(name);
+  for (const name of ["claude", "codex", "grok", "cursor-agent"]) makeExecutable(name);
   previousPath = process.env.PATH;
   process.env.PATH = `${bin}:${dirname(process.execPath)}:${previousPath ?? ""}`;
   delete process.env.FAKE_TIMEOUT;
@@ -244,6 +253,7 @@ beforeEach(() => {
   delete process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS;
   delete process.env.FAKE_DESCENDANT_PID_PATH;
   delete process.env.FAKE_SELF_SIGNAL;
+  delete process.env.FAKE_CURSOR_MODELS;
 });
 
 afterEach(() => {
@@ -268,11 +278,12 @@ afterEach(() => {
   delete process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS;
   delete process.env.FAKE_DESCENDANT_PID_PATH;
   delete process.env.FAKE_SELF_SIGNAL;
+  delete process.env.FAKE_CURSOR_MODELS;
   rmSync(scratch, { recursive: true, force: true });
 });
 
 describe("runLane", () => {
-  for (const provider of ["claude", "codex", "grok"] as const) {
+  for (const provider of ["claude", "codex", "grok", "cursor"] as const) {
     it(`executes and receipts the ${provider} external lane`, async () => {
       const input = options(provider);
       const result = await runLane(input);
@@ -284,8 +295,9 @@ describe("runLane", () => {
         status: "complete",
         provider,
         model: input.model,
-        modelVerified: provider !== "codex",
-        modelEvidence: provider === "codex" ? "pinned-argv" : "provider-report",
+        modelVerified: provider !== "codex" && provider !== "cursor",
+        modelEvidence:
+          provider === "codex" || provider === "cursor" ? "pinned-argv" : "provider-report",
         preflight: { status: "passed" },
       });
       if (provider === "claude") {
@@ -293,6 +305,35 @@ describe("runLane", () => {
       }
     });
   }
+
+  it("passes Cursor its prompt as the last argument without recording it", async () => {
+    const input = options("cursor");
+    const result = await runLane(input);
+    expect(result.exitCode).toBe(0);
+    expect(readFileSync(input.outputPath, "utf8")).toBe("CURSOR_OK Return the marker.");
+    const recorded = receipt(input.receiptPath);
+    expect(recorded.argv).toContain("grok-4.7-xhigh");
+    expect(recorded.argv).not.toContain("Return the marker.");
+    expect(recorded).toMatchObject({
+      reportedModel: null,
+      usage: { inputTokens: 40, outputTokens: 5, cachedInputTokens: 7 },
+      preflight: { evidence: "authenticated; model grok-4.7-xhigh available" },
+    });
+  });
+
+  it("refuses a Cursor model the account does not list, even as a prefix", async () => {
+    process.env.FAKE_CURSOR_MODELS = "grok-4.7-xhigh-fast - Grok 4.7  Extra High Fast";
+    const modelStarted = join(scratch, "cursor-missing-model.started");
+    process.env.FAKE_MODEL_STARTED_PATH = modelStarted;
+    const input = options("cursor", "cursor-missing-model");
+    const result = await runLane(input);
+    expect(result.exitCode).toBe(69);
+    expect(existsSync(modelStarted)).toBe(false);
+    expect(receipt(input.receiptPath)).toMatchObject({
+      status: "unavailable-model",
+      preflight: { status: "failed" },
+    });
+  });
 
   it("records Codex's exact argv without fabricating a reported model", async () => {
     const input = options("codex");
