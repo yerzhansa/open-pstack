@@ -1,6 +1,6 @@
 ---
 name: setup-pstack
-description: Configure pstack's provider-qualified models, per-family requested effort, and parent-owned routes per role. Verifies native and external Claude, Codex, and Grok lanes before writing the override sheet. Use for /setup-pstack, "configure pstack models", or changing pstack's model choices.
+description: Configure pstack's provider-qualified models, reasoning budget, per-family requested effort, and parent-owned routes per role. Verifies native and external Claude, Codex, and Grok lanes before writing the override sheet. Use for /setup-pstack, "configure pstack models", "pstack budget", or changing pstack's model choices.
 ---
 
 # Setup pstack
@@ -43,7 +43,16 @@ One distinct effort per family is the current value. A family with no non-alias 
 
 ### 4. Collect one requested effort per family
 
-Ask exactly four effort questions, one each for Fable, Sol, Grok, and Opus. Name each model, its current or proposed value, and the Selectable efforts from its matrix row. Empty input keeps a current value or accepts the matrix proposal for an unassigned family. On a first run, state the four matrix defaults before asking. On a rerun, state the four parsed values without offering to reset customized role lanes.
+Ask for a reasoning budget first. Prefer `AskUserQuestion` over free text. Offer these four options with these exact labels. On a rerun, name the current budget when the parsed efforts equal one budget's proposals.
+
+- `unlimited — keep max`
+- `large — xhigh reasoning`
+- `medium — high reasoning`
+- `small — medium reasoning`
+
+`unlimited` proposes each family's matrix Default effort. `large`, `medium`, and `small` propose `xhigh`, `high`, or `medium` for every family. If a family's Selectable efforts cell lacks that target, propose its highest selectable effort below the target. Empty input skips the budget and keeps the values from step 3. A budget only proposes efforts. The sheet has no budget line, because effort lives only in role descriptors.
+
+Then ask exactly four effort questions, one each for Fable, Sol, Grok, and Opus. Name each model, its proposed value, and the Selectable efforts from its matrix row. Empty input accepts the proposed value. Without a budget, that value is the current value, or the matrix proposal for an unassigned family. On a first run, state the four proposals before asking. On a rerun, state the four parsed values without offering to reset customized role lanes.
 
 ### 5. Probe the four requested pairs
 
