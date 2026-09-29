@@ -19,9 +19,11 @@ const MATRIX_HEADER = [
   "Default effort",
   "Selectable efforts",
   "Claude-native agent stem",
+  "Default panel",
 ] as const;
 
-const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
+const FAMILY_ORDER = ["opus", "sol", "grok", "fable"] as const;
+const DEFAULT_PANEL_FAMILIES = ["opus", "sol", "grok"] as const;
 const PROVIDERS = ["claude", "codex", "grok"] as const;
 const DESCRIPTOR_RE =
   /(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
@@ -52,7 +54,7 @@ const SETUP_SECTION_ORDER = [
   "### 2. Load current state",
   "### 3. Parse per-family efforts",
   "### 4. Collect one requested effort per family",
-  "### 5. Probe the four requested pairs",
+  "### 5. Probe the requested pairs",
   "### 6. Render, preserving role families",
   "### 7. Confirm and commit",
 ] as const;
@@ -65,6 +67,7 @@ interface MatrixRow {
   defaultEffort: Effort;
   selectableEfforts: Effort[];
   claudeNativeAgentStem: string | null;
+  defaultPanel: boolean;
 }
 
 function splitRow(line: string): string[] {
@@ -131,6 +134,7 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       defaultEffortRaw,
       selectableRaw,
       stemRaw,
+      panelRaw,
     ] = cells;
     if (!(PROVIDERS as readonly string[]).includes(provider)) {
       throw new Error(`invalid provider: ${provider}`);
@@ -147,6 +151,9 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
     if (!selectableEfforts.includes(defaultEffort)) {
       throw new Error(`${family} default effort is not selectable`);
     }
+    if (panelRaw !== "yes" && panelRaw !== "no") {
+      throw new Error(`${family} Default panel must be yes or no: ${panelRaw}`);
+    }
     return {
       family,
       upstreamChoice,
@@ -155,14 +162,15 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       defaultEffort,
       selectableEfforts,
       claudeNativeAgentStem,
+      defaultPanel: panelRaw === "yes",
     };
   });
 }
 
-function defaultDescriptors(rows: MatrixRow[]): string[] {
-  return rows.map(
-    (row) => `${row.provider}:${row.model}@${row.defaultEffort}`
-  );
+function defaultPanel(rows: MatrixRow[]): string[] {
+  return rows
+    .filter((row) => row.defaultPanel)
+    .map((row) => `${row.provider}:${row.model}@${row.defaultEffort}`);
 }
 
 function parseFrontmatter(text: string): {
@@ -200,7 +208,7 @@ function firstRunSheet(setup: string): string {
 describe("model matrix", () => {
   const rows = parseModelMatrix(readFileSync(DISPATCH_PATH, "utf8"));
   const setup = readFileSync(SETUP_PATH, "utf8");
-  const quad = defaultDescriptors(rows);
+  const panel = defaultPanel(rows);
 
   it("owns the effort universe and first-run defaults", () => {
     expect([...EFFORTS]).toEqual(["low", "medium", "high", "xhigh", "max"]);
@@ -216,19 +224,22 @@ describe("model matrix", () => {
     expect(
       rows.map((row) => [row.family, row.defaultEffort])
     ).toEqual([
-      ["fable", "max"],
+      ["opus", "max"],
       ["sol", "max"],
       ["grok", "xhigh"],
-      ["opus", "xhigh"],
+      ["fable", "max"],
     ]);
     expect(
       rows
         .filter((row) => row.family === "fable" || row.family === "opus")
         .map((row) => [row.family, row.model])
     ).toEqual([
-      ["fable", "fable"],
       ["opus", "opus"],
+      ["fable", "fable"],
     ]);
+    expect(
+      rows.filter((row) => row.defaultPanel).map((row) => row.family)
+    ).toEqual([...DEFAULT_PANEL_FAMILIES]);
   });
 
   it("ships exactly the declared Claude-native frontier agents", () => {
@@ -295,7 +306,7 @@ describe("model matrix", () => {
       }
       expect(effort).toBe(row.defaultEffort);
     }
-    const expectedPanel = quad.join(", ");
+    const expectedPanel = panel.join(", ");
     for (const role of PANEL_ROLES) {
       const line = sheet
         .split("\n")

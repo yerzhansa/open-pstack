@@ -32,7 +32,7 @@ pstack does not ask you to trust an agent on day one. It helps the agent leave e
 
 ## Install
 
-You need a current Claude Code or Codex installation. For the full four-model review, install and sign in to the Claude Code, Codex, and Grok command-line tools. [Bun](https://bun.sh) runs the small local tool that starts models outside the app you are using. You can still use the core workflows with fewer models.
+You need a current Claude Code or Codex installation. For the full three-model review, install and sign in to the Claude Code, Codex, and Grok command-line tools. [Bun](https://bun.sh) runs the small local tool that starts models outside the app you are using. You can still use the core workflows with fewer models.
 
 ### Claude Code
 
@@ -80,9 +80,11 @@ In Codex, ask:
 Use pstack:setup-pstack to configure pstack.
 ```
 
-Setup asks for a reasoning budget, checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable, GPT-5.6 Sol, Grok 4.6, and Opus.
+Setup asks for a reasoning budget, checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Opus, GPT-5.6 Sol, and Grok 4.7. Fable stays available when you choose it.
 
 An older model sheet starts using the rolling aliases in memory as soon as this release is installed. Run setup once after updating to persist that migration. It replaces versioned Fable and Opus entries while preserving every role assignment and effort selection.
+
+A model sheet written before Open Pstack 1.4.2 keeps the old default models: Fable for judgment and prose, a four-model review group with Fable and Opus, and Grok 4.6. Delete those role lines, or delete the sheet, then run setup again. Setup fills each deleted role with the current default and keeps the lines you left.
 
 ### 2. Use poteto-mode
 

@@ -5,7 +5,7 @@ description: Configure pstack's provider-qualified models, reasoning budget, per
 
 # Setup pstack
 
-Configure one portable model sheet for the current parent harness. Read [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, descriptor grammar, and route table are the contract. Choose one requested effort per matrix family. Do not add a second configuration file, a runtime resolver, or a weaker-model fallback.
+Configure one portable model sheet for the current parent harness. Read [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, descriptor grammar, and route table are the contract. Choose one requested effort per matrix family that the sheet uses. Do not add a second configuration file, a runtime resolver, or a weaker-model fallback.
 
 Claude Code writes `~/.claude/pstack-models.md` and loads it from `~/.claude/CLAUDE.md` with:
 
@@ -52,20 +52,20 @@ Ask for a reasoning budget first. Prefer `AskUserQuestion` over free text. Offer
 
 `unlimited` proposes each family's matrix Default effort. `large`, `medium`, and `small` propose `xhigh`, `high`, or `medium` for every family. If a family's Selectable efforts cell lacks that target, propose its highest selectable effort below the target. Empty input skips the budget and keeps the values from step 3. A budget only proposes efforts. The sheet has no budget line, because effort lives only in role descriptors.
 
-Then ask exactly four effort questions, one each for Fable, Sol, Grok, and Opus. Name each model, its proposed value, and the Selectable efforts from its matrix row. Empty input accepts the proposed value. Without a budget, that value is the current value, or the matrix proposal for an unassigned family. On a first run, state the four proposals before asking. On a rerun, state the four parsed values without offering to reset customized role lanes.
+Then ask one effort question for each matrix family that the role map uses, in matrix order. On a first run, that is Opus, Sol, and Grok. Name each model, its proposed value, and the Selectable efforts from its matrix row. Empty input accepts the proposed value. Without a budget, that value is the current value from step 3. An unassigned family, such as Fable on a first run, gets no question unless step 6 assigns it a role. On a first run, state the proposals before asking. On a rerun, state the parsed values without offering to reset customized role lanes.
 
-### 5. Probe the four requested pairs
+### 5. Probe the requested pairs
 
-Probe only the four selected `provider:model@effort` pairs. Run one probe per family, even when two families share a provider. Do not enumerate or offer older models as substitutes. A failed probe writes nothing: report the failing pair and provider, stop, and keep the active sheet plus parent integration bytes unchanged. A failed first run creates neither artifact.
+Probe only the selected `provider:model@effort` pair of each family that the role map uses. Run one probe per family, even when two families share a provider. Do not enumerate or offer older models as substitutes. A failed probe writes nothing: report the failing pair and provider, stop, and keep the active sheet plus parent integration bytes unchanged. A failed first run creates neither artifact.
 
 | Family | Pair source | Claude parent route | Codex parent route | Availability proof |
 |---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
 | Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | `codex login status` plus one-turn probe or native one-turn probe |
 | Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | `grok models` must list the requested model; one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
-Use a tiny read-only probe that returns a unique marker. A login-status command alone proves credentials, not that the requested model and effort flags run. Record native and external results separately. Never call the external launcher for the parent's own provider. On a Claude parent, the Fable and Opus probes are one-turn runs of the mapped `pstack-<stem>-<effort>` agent. On a Codex parent, the Sol probe is native `spawn_agent` with the selected `reasoning_effort`. Every other pair uses the external runner with the selected effort flag.
+Use a tiny read-only probe that returns a unique marker. A login-status command alone proves credentials, not that the requested model and effort flags run. Record native and external results separately. Never call the external launcher for the parent's own provider. On a Claude parent, the Opus and Fable probes are one-turn runs of the mapped `pstack-<stem>-<effort>` agent. On a Codex parent, the Sol probe is native `spawn_agent` with the selected `reasoning_effort`. Every other pair uses the external runner with the selected effort flag.
 
 Receipts and native transcripts prove the requested effort and the route. They do not prove a provider's hidden applied reasoning depth. There is no implicit timeout, weaker-model fallback, same-provider external fallback, or second mutable configuration source.
 
@@ -76,11 +76,11 @@ Build the new sheet in memory. Do not write it yet.
 - First run: start from the complete role assignments in step 7.
 - Rerun: start from the normalized complete role map from step 2, preserving each loaded row's lane order and family (or alias) per lane.
 
-After effort selection, ask whether to keep those role-to-family assignments or change named roles. Keeping them is the default. Apply only role changes the operator names; never offer a reset of a customized sheet to the first-run assignments. A changed role may use one of the four probed matrix families, `inherit-parent`, or `auto`.
+After effort selection, ask whether to keep those role-to-family assignments or change named roles. Keeping them is the default. Apply only role changes the operator names; never offer a reset of a customized sheet to the first-run assignments. A changed role may use any matrix family, `inherit-parent`, or `auto`. When a change brings in a family that step 4 did not ask about, ask its effort question and run its step 5 probe before step 7.
 
-Require the final role map to contain at least one descriptor from each matrix family. The sheet stores effort only in role descriptors, so an unassigned family's selection cannot persist without adding a second source of truth.
+A family with no role in the final map stays unassigned. The sheet stores effort only in role descriptors, so it records no effort for that family, and a later run proposes its matrix default again.
 
-Rewrite every matrix-family descriptor to `provider:model@<requested effort for that family>`. Leave `inherit-parent` and `auto` unchanged. An effort-only rerun cannot change a role's family. Changing Grok's effort updates every Grok occurrence and does not move a Sol role onto Grok. Refuse an unqualified slug, an unavailable route, a model other than the four matrix families, or a provider/model mismatch.
+Rewrite every matrix-family descriptor to `provider:model@<requested effort for that family>`. Leave `inherit-parent` and `auto` unchanged. An effort-only rerun cannot change a role's family. Changing Grok's effort updates every Grok occurrence and does not move a Sol role onto Grok. Refuse an unqualified slug, an unavailable route, a model outside the matrix families, or a provider/model mismatch.
 
 ### 7. Confirm and commit
 
@@ -97,33 +97,33 @@ After the operator confirms, write the in-memory render from step 6. Never paste
 
 Provider-qualified per-role choices. Read the installed pstack provider-dispatch reference before dispatching a configured role. Every documented role remains present. `inherit-parent` and `auto` use the parent model natively and still count as one panel lane.
 
-feature, refactoring: grok:grok-4.6@xhigh
+feature, refactoring: grok:grok-4.7@xhigh
 bug-fix: codex:gpt-5.6-sol@max
 perf-issue: codex:gpt-5.6-sol@max
 hillclimb: codex:gpt-5.6-sol@max
-judgment and prose: claude:fable@max
-hardest tasks: claude:fable@max
-how explorer: grok:grok-4.6@xhigh
-how explainer: claude:fable@max
+judgment and prose: claude:opus@max
+hardest tasks: claude:opus@max
+how explorer: grok:grok-4.7@xhigh
+how explainer: claude:opus@max
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: claude:fable@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:opus@xhigh
-arena cross-judge pool: claude:fable@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:opus@xhigh
-swarm workers: grok:grok-4.6@xhigh
-architect runners: claude:fable@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:opus@xhigh
-interrogate reviewers: claude:fable@max, codex:gpt-5.6-sol@max, grok:grok-4.6@xhigh, claude:opus@xhigh
+arena runners: claude:opus@max, codex:gpt-5.6-sol@max, grok:grok-4.7@xhigh
+arena cross-judge pool: claude:opus@max, codex:gpt-5.6-sol@max, grok:grok-4.7@xhigh
+swarm workers: grok:grok-4.7@xhigh
+architect runners: claude:opus@max, codex:gpt-5.6-sol@max, grok:grok-4.7@xhigh
+interrogate reviewers: claude:opus@max, codex:gpt-5.6-sol@max, grok:grok-4.7@xhigh
 ```
 
 ### 8. Wire it in
 
 Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/pstack-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- pstack:models:begin -->` and `<!-- pstack:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary.
 
-Snapshot every target's current bytes. Write the sheet and parent integration only after all four probes pass and the operator confirms. Read both targets back and compare them with the in-memory render. If either write or readback fails, restore every snapshot and report the failure. An unchanged rerun must produce byte-identical sheet and integration content after normalization.
+Snapshot every target's current bytes. Write the sheet and parent integration only after every step 5 probe passes and the operator confirms. Read both targets back and compare them with the in-memory render. If either write or readback fails, restore every snapshot and report the failure. An unchanged rerun must produce byte-identical sheet and integration content after normalization.
 
 Do not copy the model sheet between harnesses without rerunning the parent-specific probes; route availability can differ even on the same host.
 
 ### 9. Behavioral smoke
 
-Before declaring setup complete, run one small read-only mixed panel from this parent: all four chosen descriptors, distinct output/receipt paths, and an independent cross-judge. Launch Claude-native agents and every external process in the background with retained handles, then drain them. Verify the native transcript entries and every external receipt. A structural config check or unit test is not a substitute.
+Before declaring setup complete, run one small read-only mixed panel from this parent: one lane for each family descriptor the sheet uses, distinct output/receipt paths, and an independent cross-judge. Launch Claude-native agents and every external process in the background with retained handles, then drain them. Verify the native transcript entries and every external receipt. A structural config check or unit test is not a substitute.
 
 Report the sheet path, parent route table, requested-effort probe results, smoke results, and external elapsed/token/cost receipts. Re-running this skill re-probes and updates the same sheet. Do not claim the provider exposed hidden applied-effort observability.
