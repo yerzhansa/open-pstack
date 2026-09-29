@@ -120,6 +120,44 @@ describe("parseProviderOutput", () => {
     expect(reportedModelMatches("grok", "fable", "claude-fable-9-9")).toBe(false);
   });
 
+  it("extracts Cursor text, session, and usage without a reported model", () => {
+    const parsed = parseProviderOutput(
+      "cursor",
+      JSON.stringify({
+        type: "result",
+        subtype: "success",
+        is_error: false,
+        result: "OK",
+        session_id: "91aecc26",
+        usage: { inputTokens: 19881, outputTokens: 26, cacheReadTokens: 1152, cacheWriteTokens: 0 },
+      }),
+      "",
+      "grok-4.7"
+    );
+    expect(parsed).toEqual({
+      text: "OK",
+      reportedModel: null,
+      sessionId: "91aecc26",
+      usage: {
+        inputTokens: 19881,
+        outputTokens: 26,
+        cachedInputTokens: 1152,
+        cacheCreationInputTokens: 0,
+        reasoningTokens: undefined,
+        totalTokens: undefined,
+      },
+      costUsd: null,
+    });
+    expect(() =>
+      parseProviderOutput(
+        "cursor",
+        JSON.stringify({ type: "result", subtype: "error", is_error: true, result: "" }),
+        "",
+        "grok-4.7"
+      )
+    ).toThrow("cursor-agent reported an error result");
+  });
+
   it("rejects malformed or textless responses", () => {
     expect(() =>
       parseProviderOutput("claude", "not-json", "", "fable")

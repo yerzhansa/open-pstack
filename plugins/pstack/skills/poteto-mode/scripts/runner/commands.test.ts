@@ -22,7 +22,7 @@ describe("invocationCommand", () => {
   it("pins Codex model, effort, sandbox, cwd, and JSONL output", () => {
     const spec = invocationCommand(options());
     expect(spec.command).toBe("codex");
-    expect(spec.stdin).toBe("prompt");
+    expect(spec.prompt).toBe("stdin");
     expect(spec.args).toEqual([
       "exec",
       "--model",
@@ -58,7 +58,7 @@ describe("invocationCommand", () => {
       })
     );
     expect(spec.command).toBe("claude");
-    expect(spec.stdin).toBe("prompt");
+    expect(spec.prompt).toBe("stdin");
     expect(spec.args).toEqual([
       "-p",
       "--model",
@@ -87,7 +87,7 @@ describe("invocationCommand", () => {
       options({ provider: "grok", model: "grok-4.6", effort: "xhigh" })
     );
     expect(spec.command).toBe("grok");
-    expect(spec.stdin).toBe("none");
+    expect(spec.prompt).toBe("none");
     expect(spec.args).toEqual([
       "--prompt-file",
       "/tmp/prompt.md",
@@ -176,5 +176,37 @@ describe("invocationCommand", () => {
         expect(spec.args).toEqual(expect.arrayContaining(flag(effort)));
       }
     }
+  });
+
+  it("names Cursor's effort in the model and passes the prompt as an argument", () => {
+    const readOnly = invocationCommand(
+      options({ provider: "cursor", model: "grok-4.7", effort: "xhigh" })
+    );
+    expect(readOnly.command).toBe("cursor-agent");
+    expect(readOnly.prompt).toBe("argument");
+    expect(readOnly.args).toEqual([
+      "-p",
+      "--trust",
+      "--model",
+      "grok-4.7-xhigh",
+      "--mode",
+      "ask",
+      "--sandbox",
+      "enabled",
+      "--workspace",
+      "/tmp/worktree",
+      "--output-format",
+      "json",
+    ]);
+    const writer = invocationCommand(
+      options({
+        provider: "cursor",
+        model: "grok-4.7",
+        effort: "high",
+        mode: "isolated-write",
+      })
+    );
+    expect(writer.args.slice(2, 6)).toEqual(["--model", "grok-4.7-high", "--force", "--sandbox"]);
+    expect(writer.args).not.toContain("ask");
   });
 });

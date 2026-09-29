@@ -8,7 +8,7 @@ import type {
 export interface CommandSpec {
   readonly command: string;
   readonly args: readonly string[];
-  readonly stdin: "prompt" | "none";
+  readonly prompt: "stdin" | "argument" | "none";
 }
 
 export function preflightCommand(provider: Provider): CommandSpec {
@@ -17,16 +17,18 @@ export function preflightCommand(provider: Provider): CommandSpec {
       return {
         command: "claude",
         args: ["auth", "status", "--json"],
-        stdin: "none",
+        prompt: "none",
       };
     case "codex":
       return {
         command: "codex",
         args: ["login", "status"],
-        stdin: "none",
+        prompt: "none",
       };
     case "grok":
-      return { command: "grok", args: ["models"], stdin: "none" };
+      return { command: "grok", args: ["models"], prompt: "none" };
+    case "cursor":
+      return { command: "cursor-agent", args: ["models"], prompt: "none" };
   }
 }
 
@@ -53,6 +55,14 @@ function grokSandbox(mode: AccessMode): string {
 function grokTools(mode: AccessMode): string {
   const readonly = ["read_file", "grep", "list_dir", "run_terminal_cmd"];
   return [...readonly, ...(mode === "isolated-write" ? ["search_replace"] : [])].join(",");
+}
+
+export function cursorModel(model: string, effort: Effort): string {
+  return `${model}-${effort}`;
+}
+
+function cursorAccess(mode: AccessMode): readonly string[] {
+  return mode === "read-only" ? ["--mode", "ask"] : ["--force"];
 }
 
 function permissionMode(mode: AccessMode): string {
@@ -88,7 +98,7 @@ export function invocationCommand(options: RunnerOptions): CommandSpec {
           "--output-format",
           "json",
         ],
-        stdin: "prompt",
+        prompt: "stdin",
       };
     case "codex":
       return {
@@ -116,7 +126,7 @@ export function invocationCommand(options: RunnerOptions): CommandSpec {
           "--json",
           "-",
         ],
-        stdin: "prompt",
+        prompt: "stdin",
       };
     case "grok":
       return {
@@ -144,7 +154,25 @@ export function invocationCommand(options: RunnerOptions): CommandSpec {
           "--disable-web-search",
           "--verbatim",
         ],
-        stdin: "none",
+        prompt: "none",
+      };
+    case "cursor":
+      return {
+        command: "cursor-agent",
+        args: [
+          "-p",
+          "--trust",
+          "--model",
+          cursorModel(options.model, options.effort),
+          ...cursorAccess(options.mode),
+          "--sandbox",
+          "enabled",
+          "--workspace",
+          options.cwd,
+          "--output-format",
+          "json",
+        ],
+        prompt: "argument",
       };
   }
 }
