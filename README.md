@@ -84,7 +84,7 @@ Setup asks for a reasoning budget, checks the models you can actually run, shows
 
 An older model sheet starts using the rolling aliases in memory as soon as this release is installed. Run setup once after updating to persist that migration. It replaces versioned Fable and Opus entries while preserving every role assignment and effort selection.
 
-A model sheet written before Open Pstack 1.4.2 keeps the old default models: Fable for judgment and prose, a four-model review group with Fable and Opus, and Grok 4.6. Delete those role lines, or delete the sheet, then run setup again. Setup fills each deleted role with the current default and keeps the lines you left.
+A model sheet written before Open Pstack 1.4.2 keeps the old default models. Delete those role lines, or delete the sheet, then run setup again. Setup fills each deleted role with the current default and keeps the lines you left.
 
 ### 2. Use poteto-mode
 
