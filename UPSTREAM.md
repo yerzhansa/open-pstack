@@ -8,16 +8,17 @@ open-pstack tracks [Cursor's pstack](https://github.com/cursor/plugins/tree/main
 | --- | --- |
 | Repository | `https://github.com/cursor/plugins.git` |
 | Path | `pstack/` |
-| Commit | `12d587dfb20741cafc376c42c696c5f6e2a64487` |
-| Upstream version | `0.15.5` |
+| Commit | `e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a` |
+| Upstream version | `0.15.9` |
 | open-pstack version | `1.4.2-cursor.1` |
 
-The table above is the current Cursor sync point. Open Pstack 1.4.2 imports this 0.15.5 sync. `README-UPSTREAM.md` preserves the upstream pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
+The table above is the current Cursor sync point. Open Pstack 1.4.3 imports this 0.15.9 sync. `README-UPSTREAM.md` preserves the upstream pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
 ## Upstream-only exclusions
 
 - Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that Claude Code and Codex do not share.
 - Four `disable-model-invocation: true` lines from `73f8be4` are not applied to `how`, `why`, `unslop`, or `typescript-best-practices`. Poteto-mode invokes those skills by name, and the flag blocks that route on Claude Code.
+- The `disable-model-invocation: true` line that `23e4138` ships on `benchmark-checklist` is not applied. Poteto-mode, Perf issue, and Hillclimb invoke that skill by name, and the flag blocks that route on Claude Code. `correct` from `9511e60` keeps the flag because only the operator invokes it.
 - The `23a56e2` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those frequent code-writing roles stay on `codex:gpt-5.6-sol@max` for cost.
 - The `889ec4b` default-model hunks that move `bug-fix`, `perf-issue`, and `hillclimb` to Grok are not applied. Those roles keep the documented `codex:gpt-5.6-sol@max` default above.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
@@ -34,8 +35,8 @@ Fetch and inspect only commits that touched pstack after the recorded sync point
 
 ```shell
 git fetch cursor main
-git log --oneline 12d587dfb20741cafc376c42c696c5f6e2a64487..cursor/main -- pstack
-git diff --stat 12d587dfb20741cafc376c42c696c5f6e2a64487..cursor/main -- pstack
+git log --oneline e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a..cursor/main -- pstack
+git diff --stat e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a..cursor/main -- pstack
 ```
 
 No output means the tracked pstack tree has not changed. This comparison does not need a polling service or generated mirror branch.
