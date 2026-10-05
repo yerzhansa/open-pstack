@@ -60,7 +60,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 - [ ] Run the repo's lint and typecheck once before the PR-facing push. Push with hooks on.
 - [ ] Run `/deslop` before each commit and `/no-comments` before review.
 - [ ] Triage every Bugbot and security-reviewer comment per `skills/poteto-mode/references/bugbot-triage.md` under the installed plugin.
-- [ ] Before the code-ready report and babysit, rebase each independent PR and stack root onto current trunk. Rebase each unmerged stack child onto its parent's exact tip. Keep that merge base in fix rounds. Rebase again only at merge prep, on a `git merge-tree` conflict with trunk, or on a CI failure that comes from a change on trunk. After its parent merges, use Shipping's explicit old-base-to-trunk rebase before the child's merge-ready report.
+- [ ] Rebase each independent PR and stack root onto current trunk before the code-ready report and babysit. Rebase each unmerged stack child onto its parent's exact tip. Keep that merge base in fix rounds. Rebase again only at merge prep, on a `git merge-tree` conflict with trunk, or on a CI failure that comes from a change on trunk. After its parent merges, use Shipping's explicit old-base-to-trunk rebase before the child's merge-ready report.
 
 ### Verdict and merge, for every PR
 

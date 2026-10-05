@@ -10,18 +10,26 @@ open-pstack tracks [Cursor's pstack](https://github.com/cursor/plugins/tree/main
 | Path | `pstack/` |
 | Commit | `e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a` |
 | Upstream version | `0.15.9` |
-| open-pstack version | `1.4.3-cursor.1` |
+| open-pstack version | `1.5.0-cursor.1` |
 
-The table above is the current Cursor sync point. Open Pstack 1.4.3 imports this 0.15.9 sync. `README-UPSTREAM.md` preserves the upstream pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
+The table above is the current Cursor sync point. Open Pstack 1.5.0-cursor.1 imports this 0.15.9 sync. `README-UPSTREAM.md` preserves the upstream pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
 ## Upstream-only exclusions
 
 - Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that Claude Code and Codex do not share.
 - Four `disable-model-invocation: true` lines from `73f8be4` are not applied to `how`, `why`, `unslop`, or `typescript-best-practices`. Poteto-mode invokes those skills by name, and the flag blocks that route on Claude Code.
 - The `disable-model-invocation: true` line that `23e4138` ships on `benchmark-checklist` is not applied. Poteto-mode, Perf issue, and Hillclimb invoke that skill by name, and the flag blocks that route on Claude Code. `correct` from `9511e60` keeps the flag because only the operator invokes it.
-- The `23a56e2` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those frequent code-writing roles stay on `codex:gpt-5.6-sol@max` for cost.
-- The `889ec4b` default-model hunks that move `bug-fix`, `perf-issue`, and `hillclimb` to Grok are not applied. Those roles keep the documented `codex:gpt-5.6-sol@max` default above.
+- The default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` from `23a56e2`, `889ec4b`, and `70b2dc8` are not applied. Those frequent code-writing roles stay on `codex:gpt-6.1-sol@max`.
+- `5bf2b15`'s setup budget question, its `# budget` line, and its step down to a lower detected effort are not applied. Setup already asks one requested effort per assigned family, and the step-down would silently lower a requested effort.
+- `12d587d`'s rule that reruns a rejected configured entry on its family default or the closest valid slug is not applied. An unavailable model stays a named dropout per `provider-dispatch.md`.
+- The expected-runtime column in `70b2dc8`'s `children.tsv` and its expected-runtime stuck test are not applied. A lane is stuck only on affirmative failure evidence.
+- The explicit Grok, Opus, and Sol defaults for the Why and Reflect roles are not applied. Those roles stay on `inherit-parent` because the external runner omits the parent's MCP servers.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
+
+## Local port-patch ledger
+
+- **#120 — harness config homes** (tracked for #105): Cursor's setup destination is `~/.cursor/rules/`. The shared port resolves nonempty `CLAUDE_CONFIG_DIR` / `CODEX_HOME`, otherwise `$HOME/.claude` / `$HOME/.codex`, once at `plugins/pstack/skills/poteto-mode/references/codex-tools.md#harness-config-homes`. `setup-pstack/SKILL.md` reuses that home for reads, sheet/integration writes, snapshots, restoration, and readback; Claude preserves the literal legacy import at the default home and renders exactly `@./pstack-models.md` for redirected homes, keeping spaces and `#` in the config-directory name out of the import line; reruns replace the one import whose target basename is `pstack-models.md`, append if absent, and stop if duplicated. Preserve this intentional divergence during upstream syncs. The named config-home invariant in `tests/skill-collision-repro.sh` rejects literal default destinations outside the legacy import, requires the literal default-home rendering and zero/one/many import rules, and verifies unset/empty/space-containing resolution without daily writes. See `CHANGES.md` for the port correction and `tests/setup-config-home-repro.sh` for redirected live-evidence preparation. The Cursor sync point is unchanged.
+- **Fork: Cursor provider.** The `yerzhansa/open-pstack` fork carries a `cursor` provider that neither Cursor's pstack nor `ericlitman/open-pstack` ships. A `cursor:<model>@<effort>` descriptor runs `cursor-agent` through the external runner. The provider lives in `types.ts`, `commands.ts`, `parse-output.ts`, `run.ts`, and their tests under `plugins/pstack/skills/poteto-mode/scripts/runner/`, and in the `cursor:*` route column and Cursor paragraphs of `provider-dispatch.md`. Preserve it when merging from either upstream. The fork also tracks a later Cursor sync point than `ericlitman/open-pstack`, so the table above can be ahead of that repository's. See `CHANGES.md`.
 
 ## Check for changes
 

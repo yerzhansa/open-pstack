@@ -19,14 +19,13 @@ const MATRIX_HEADER = [
   "Default effort",
   "Selectable efforts",
   "Claude-native agent stem",
-  "Default panel",
 ] as const;
 
-const FAMILY_ORDER = ["opus", "sol", "grok", "fable"] as const;
-const DEFAULT_PANEL_FAMILIES = ["opus", "sol", "grok"] as const;
+const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
+const FIRST_RUN_PANEL = ["opus", "sol", "grok"] as const;
 const PROVIDERS = ["claude", "codex", "grok"] as const;
 const DESCRIPTOR_RE =
-  /(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
+  /(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max|ultra)/g;
 const PANEL_ROLES = [
   "arena runners",
   "arena cross-judge pool",
@@ -67,7 +66,6 @@ interface MatrixRow {
   defaultEffort: Effort;
   selectableEfforts: Effort[];
   claudeNativeAgentStem: string | null;
-  defaultPanel: boolean;
 }
 
 function splitRow(line: string): string[] {
@@ -134,7 +132,6 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       defaultEffortRaw,
       selectableRaw,
       stemRaw,
-      panelRaw,
     ] = cells;
     if (!(PROVIDERS as readonly string[]).includes(provider)) {
       throw new Error(`invalid provider: ${provider}`);
@@ -151,9 +148,6 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
     if (!selectableEfforts.includes(defaultEffort)) {
       throw new Error(`${family} default effort is not selectable`);
     }
-    if (panelRaw !== "yes" && panelRaw !== "no") {
-      throw new Error(`${family} Default panel must be yes or no: ${panelRaw}`);
-    }
     return {
       family,
       upstreamChoice,
@@ -162,15 +156,21 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       defaultEffort,
       selectableEfforts,
       claudeNativeAgentStem,
-      defaultPanel: panelRaw === "yes",
     };
   });
 }
 
-function defaultPanel(rows: MatrixRow[]): string[] {
-  return rows
-    .filter((row) => row.defaultPanel)
-    .map((row) => `${row.provider}:${row.model}@${row.defaultEffort}`);
+function defaultDescriptors(
+  rows: MatrixRow[],
+  families: readonly string[]
+): string[] {
+  return families.map((family) => {
+    const row = rows.find((candidate) => candidate.family === family);
+    if (row === undefined) {
+      throw new Error(`missing matrix family: ${family}`);
+    }
+    return `${row.provider}:${row.model}@${row.defaultEffort}`;
+  });
 }
 
 function parseFrontmatter(text: string): {
@@ -208,10 +208,10 @@ function firstRunSheet(setup: string): string {
 describe("model matrix", () => {
   const rows = parseModelMatrix(readFileSync(DISPATCH_PATH, "utf8"));
   const setup = readFileSync(SETUP_PATH, "utf8");
-  const panel = defaultPanel(rows);
+  const panel = defaultDescriptors(rows, FIRST_RUN_PANEL);
 
   it("owns the effort universe and first-run defaults", () => {
-    expect([...EFFORTS]).toEqual(["low", "medium", "high", "xhigh", "max"]);
+    expect([...EFFORTS]).toEqual(["low", "medium", "high", "xhigh", "max", "ultra"]);
     expect(rows.map((row) => row.family)).toEqual([...FAMILY_ORDER]);
     for (const row of rows) {
       expect(row.upstreamChoice.length).toBeGreaterThan(0);
@@ -224,22 +224,43 @@ describe("model matrix", () => {
     expect(
       rows.map((row) => [row.family, row.defaultEffort])
     ).toEqual([
-      ["opus", "max"],
+      ["fable", "max"],
       ["sol", "max"],
       ["grok", "xhigh"],
-      ["fable", "max"],
+      ["opus", "max"],
     ]);
     expect(
       rows
         .filter((row) => row.family === "fable" || row.family === "opus")
         .map((row) => [row.family, row.model])
     ).toEqual([
-      ["opus", "opus"],
       ["fable", "fable"],
+      ["opus", "opus"],
     ]);
+  });
+
+  it("offers ultra only on the Sol row, whose Codex model lists it", () => {
     expect(
-      rows.filter((row) => row.defaultPanel).map((row) => row.family)
-    ).toEqual([...DEFAULT_PANEL_FAMILIES]);
+      rows
+        .filter((row) => row.selectableEfforts.includes("ultra"))
+        .map((row) => `${row.provider}:${row.model}`)
+    ).toEqual(["codex:gpt-6.1-sol"]);
+  });
+
+  it("keeps the previous Sol default running until setup replaces it", () => {
+    const dispatch = readFileSync(DISPATCH_PATH, "utf8");
+    expect(dispatch).toContain(
+      "`codex:gpt-5.6-sol@<effort>` is the previous Sol default."
+    );
+    expect(dispatch).toContain("Do not rewrite it in memory.");
+    expect(setup).toContain(
+      "propose replacing every occurrence with `codex:gpt-6.1-sol@<same effort>` and ask"
+    );
+    expect(setup).toContain(
+      "Reject `ultra` for every row whose Selectable efforts cell does not list it."
+    );
+    expect(setup).toContain("matching a kept `codex:gpt-5.6-sol` to the Sol row");
+    expect(setup).toContain("other than a kept `gpt-5.6-sol`");
   });
 
   it("ships exactly the declared Claude-native frontier agents", () => {
